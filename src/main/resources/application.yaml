@@ -10,5 +10,5 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
   datasource:
-    url: jdbc:shardingsphere:classpath:sharding.yaml
+    url: jdbc:shardingsphere:classpath:sharding.yaml?placeholder-type=system_props
     driver-class-name: org.apache.shardingsphere.driver.ShardingSphereDriver
