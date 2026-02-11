@@ -20,8 +20,8 @@ rules:
         shardingColumn: id
         shardingAlgorithmName: db-inline
     tables:
-      user:
-        actualDataNodes: shardwallet${1..2}.user
+      users:
+        actualDataNodes: shardwallet${1..2}.users
         keyGenerateStrategy:
           column: id
           keyGeneratorName: snowflakeStrategy
