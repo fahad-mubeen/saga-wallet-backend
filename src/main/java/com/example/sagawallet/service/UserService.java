@@ -17,4 +17,16 @@ public class UserService {
         User saved = userRepository.save(user);
         return UserMapper.toDto(saved);
     }
+
+    public UserDto getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return UserMapper.toDto(user);
+    }
+
+    public UserDto getUserByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return UserMapper.toDto(user);
+    }
 }
