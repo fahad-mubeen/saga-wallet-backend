@@ -82,3 +82,10 @@ public class CreditDestinationWalletStep implements ISagaStep {
         return "CreditDestinationWalletStep";
     }
 }
+
+// IMPROVEMENTS:
+// If the server crashes after the DB commits but before the Saga Orchestrator records the step as "Finished" in its own logs,
+// the orchestrator might try to run this step (execute/compensate) again (Idempotency issue).
+// Potential fix:
+// 1. Use outbox pattern to record the step execution in the same transaction as the DB update
+// 2. Implement idempotency
