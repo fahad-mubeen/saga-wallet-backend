@@ -33,4 +33,9 @@ public class SagaContext {
         Object value = data.get(key);
         return value instanceof BigDecimal ? (BigDecimal) value : null;
     }
+
+    public String getString(String key) {
+        Object value = data.get(key);
+        return value instanceof String ? value.toString() : null;
+    }
 }
