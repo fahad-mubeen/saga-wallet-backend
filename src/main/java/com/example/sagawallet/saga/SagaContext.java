@@ -3,6 +3,7 @@ package com.example.sagawallet.saga;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,5 +22,15 @@ public class SagaContext {
 
     public Object get(String key) {
         return data.get(key);
+    }
+
+    public Long getLong(String key) {
+        Object value = data.get(key);
+        return value instanceof Number ? ((Number) value).longValue() : null;
+    }
+
+    public BigDecimal getBigDecimal(String key) {
+        Object value = data.get(key);
+        return value instanceof BigDecimal ? (BigDecimal) value : null;
     }
 }
