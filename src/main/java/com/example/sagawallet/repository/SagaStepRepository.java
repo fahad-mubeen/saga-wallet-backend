@@ -1,12 +1,14 @@
 package com.example.sagawallet.repository;
 
 import com.example.sagawallet.entity.SagaStep;
+import com.example.sagawallet.enums.SagaStepStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SagaStepRepository extends JpaRepository<SagaStep, Long> {
@@ -21,4 +23,6 @@ public interface SagaStepRepository extends JpaRepository<SagaStep, Long> {
 
     @Query("SELECT s FROM SagaStep s WHERE s.sagaInstanceId = :saga_instance_id AND s.status in ('COMPLETED', 'COMPENSATED')")
     List<SagaStep> findCompletedOrCompensatedStepsBySagaInstanceId(@Param("saga_instance_id") Long sagaInstanceId);
+
+    Optional<SagaStep> findBySagaInstanceIdAndStepNameAndStatus(Long sagaInstanceId, String stepName, SagaStepStatus status);
 }

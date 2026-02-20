@@ -14,7 +14,7 @@ public interface ISagaOrchestrator {
 
     void completeSaga(Long sagaInstanceId);
 
-    void compensateSaga(Long sagaInstanceId);
+    void compensateSaga(Long sagaInstanceId) throws Exception;
 
     void failSaga(Long sagaInstanceId);
 }
