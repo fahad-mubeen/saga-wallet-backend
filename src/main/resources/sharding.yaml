@@ -37,3 +37,15 @@ rules:
     keyGenerators:
       snowflakeStrategy:
         type: SNOWFLAKE
+
+# ===================================================================================
+# FUTURE ENHANCEMENT: Secondary Index Problem (Login Optimization)
+# Currently, sharding by 'id' causes "Full Route" queries when logging in via 'username'.
+#
+# Solution: The Mapping (Lookup) Table Pattern
+# 1. How it works: Create a separate table (e.g., user_mapping) with (username, user_id).
+# 2. Strategy: Shard the 'user_mapping' table by 'username'.
+# 3. Login Flow:
+#    - Query user_mapping by 'username' to retrieve the 'user_id' (Hits 1 shard).
+#    - Use 'user_id' to query the main sharded 'users' table (Hits 1 shard).
+# ===================================================================================

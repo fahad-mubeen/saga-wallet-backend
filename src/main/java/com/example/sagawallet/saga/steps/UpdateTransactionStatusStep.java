@@ -55,6 +55,6 @@ public class UpdateTransactionStatusStep implements ISagaStep {
 
     @Override
     public String getName() {
-        return "TransactionStatusUpdateStep";
+        return SagaStepFactory.SagaStepType.UPDATE_TRANSACTION_STATUS_STEP.toString();
     }
 }
