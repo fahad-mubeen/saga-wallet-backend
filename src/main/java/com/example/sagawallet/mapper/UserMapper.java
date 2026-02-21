@@ -4,7 +4,6 @@ import com.example.sagawallet.dto.UserDto;
 import com.example.sagawallet.entity.User;
 import org.springframework.stereotype.Component;
 
-@Component
 public class UserMapper {
     public static User toEntity(UserDto dto) {
         return User.builder()
