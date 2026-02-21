@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -21,6 +22,20 @@ public class TransactionService {
     @Transactional
     public Transaction createTransaction(TransactionDTO transactionDTO) {
         Transaction transaction = TransactionMapper.toEntity(transactionDTO);
+        transaction = transactionRepository.save(transaction);
+        log.info("Transaction created successfully with id: {}", transaction.getId());
+        return transaction;
+    }
+
+    @Transactional
+    public Transaction createTransaction(Long sourceWalletId, Long destinationWalletId, BigDecimal amount, String description) {
+        Transaction transaction = Transaction.builder()
+                .sourceWalletId(sourceWalletId)
+                .destinationWalletId(destinationWalletId)
+                .amount(amount)
+                .description(description)
+                .status(TransactionStatus.PENDING)
+                .build();
         transaction = transactionRepository.save(transaction);
         log.info("Transaction created successfully with id: {}", transaction.getId());
         return transaction;
@@ -49,5 +64,12 @@ public class TransactionService {
 
     public List<Transaction> getTransactionsByStatus(TransactionStatus status) {
         return transactionRepository.findByStatus(status);
+    }
+
+    public void updateTransactionWithSagaInstanceId(Long transactionId, Long sagaInstanceId) {
+        Transaction transaction = getTransactionById(transactionId);
+        transaction.setSagaInstanceId(sagaInstanceId);
+        transactionRepository.save(transaction);
+        log.info("Transaction with id: {} updated with saga instance id: {}", transactionId, sagaInstanceId);
     }
 }

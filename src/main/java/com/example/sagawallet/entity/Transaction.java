@@ -41,6 +41,6 @@ public class Transaction {
     @Column(name = "description", nullable = true)
     private String description;
 
-    @Column(name = "saga_instance_id", nullable = false)
+    @Column(name = "saga_instance_id")
     private Long sagaInstanceId;
 }

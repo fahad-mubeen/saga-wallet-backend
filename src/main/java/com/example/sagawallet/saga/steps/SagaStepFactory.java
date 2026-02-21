@@ -16,6 +16,12 @@ public class SagaStepFactory {
         UPDATE_TRANSACTION_STATUS_STEP
     }
 
+    public static final List<SagaStepType> TransferMoneySagaSteps = List.of(
+        SagaStepType.CREDIT_DESTINATION_WALLET_STEP,
+        SagaStepType.DEBIT_SOURCE_WALLET_STEP,
+        SagaStepType.UPDATE_TRANSACTION_STATUS_STEP
+    );
+
     private final Map<String, ISagaStep> sagaStepMap;
 
     public SagaStepFactory(List<ISagaStep> sagaSteps) {
