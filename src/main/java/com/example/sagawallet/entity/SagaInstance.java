@@ -22,7 +22,7 @@ public class SagaInstance {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private SagaStatus status = SagaStatus.STARTED;
 
     @JdbcTypeCode(SqlTypes.JSON)

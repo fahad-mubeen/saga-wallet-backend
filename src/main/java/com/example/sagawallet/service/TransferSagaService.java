@@ -42,7 +42,6 @@ public class TransferSagaService {
         Long sagaInstanceId = sagaOrchestrator.startSaga(sagaContext);
         log.info("Transfer saga initiated with saga instance id: {}", sagaInstanceId);
         transactionService.updateTransactionWithSagaInstanceId(transaction.getId(), sagaInstanceId);
-
         executeTransferSaga(sagaInstanceId);
 
         return sagaInstanceId;

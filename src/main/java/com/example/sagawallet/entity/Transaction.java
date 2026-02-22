@@ -31,11 +31,11 @@ public class Transaction {
     private Long destinationWalletId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status")
     private TransactionStatus status = TransactionStatus.PENDING;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "transaction_type", nullable = false)
+    @Column(name = "transaction_type")
     private TransactionType type = TransactionType.TRANSFER;
 
     @Column(name = "description", nullable = true)

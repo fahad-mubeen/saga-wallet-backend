@@ -1,6 +1,7 @@
 package com.example.sagawallet.saga.steps;
 
 import com.example.sagawallet.saga.ISagaStep;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class SagaStepFactory {
     public static enum SagaStepType {
         DEBIT_SOURCE_WALLET_STEP,
@@ -17,8 +19,8 @@ public class SagaStepFactory {
     }
 
     public static final List<SagaStepType> TransferMoneySagaSteps = List.of(
-        SagaStepType.CREDIT_DESTINATION_WALLET_STEP,
         SagaStepType.DEBIT_SOURCE_WALLET_STEP,
+        SagaStepType.CREDIT_DESTINATION_WALLET_STEP,
         SagaStepType.UPDATE_TRANSACTION_STATUS_STEP
     );
 
@@ -35,6 +37,11 @@ public class SagaStepFactory {
 //            throw new IllegalArgumentException("Saga step not found: " + stepName);
 //        }
 //        return sagaStepMap.get(stepName);
+        log.error("Getting saga step with name: {}", stepName);
+        if(!sagaStepMap.containsKey(stepName)) {
+            log.error("Saga step not found: {}", stepName);
+            return Optional.empty();
+        }
         return Optional.ofNullable(sagaStepMap.get(stepName));
     }
 }

@@ -79,7 +79,7 @@ public class CreditDestinationWalletStep implements ISagaStep {
 
     @Override
     public String getName() {
-        return "CreditDestinationWalletStep";
+        return SagaStepFactory.SagaStepType.CREDIT_DESTINATION_WALLET_STEP.toString();
     }
 }
 

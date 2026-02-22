@@ -42,8 +42,8 @@ rules:
         actualDataNodes: shardwallet${1..2}.wallets
         databaseStrategy:
           standard:
-            shardingColumn: user_id
-            shardingAlgorithmName: db-inline-user-id
+            shardingColumn: id
+            shardingAlgorithmName: db-inline
         keyGenerateStrategy:
           column: id
           keyGeneratorName: snowflakeStrategy

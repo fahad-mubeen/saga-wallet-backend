@@ -1,6 +1,7 @@
 package com.example.sagawallet.controller;
 
 import com.example.sagawallet.dto.CreateWalletRequestDTO;
+import com.example.sagawallet.dto.DebitWalletRequestDTO;
 import com.example.sagawallet.entity.Wallet;
 import com.example.sagawallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
@@ -35,16 +36,16 @@ public class WalletController {
         return ResponseEntity.ok(balance);
     }
 
-    @PostMapping("/debit/{id}")
-    public ResponseEntity<Wallet> debit(@PathVariable Long id, @RequestParam BigDecimal amount) {
-        walletService.debit(id, amount);
+    @PutMapping("/debit/{id}")
+    public ResponseEntity<Wallet> debit(@PathVariable Long id, @RequestBody DebitWalletRequestDTO request) {
+        walletService.debit(id, request.getAmount());
         Wallet wallet = walletService.getWalletById(id);
         return ResponseEntity.ok(wallet);
     }
 
-    @PostMapping("/credit/{id}")
-    public ResponseEntity<Wallet> credit(@PathVariable Long id, @RequestParam BigDecimal amount) {
-        walletService.credit(id, amount);
+    @PutMapping("/credit/{id}")
+    public ResponseEntity<Wallet> credit(@PathVariable Long id, @RequestBody DebitWalletRequestDTO request) {
+        walletService.credit(id, request.getAmount());
         Wallet wallet = walletService.getWalletById(id);
         return ResponseEntity.ok(wallet);
     }
