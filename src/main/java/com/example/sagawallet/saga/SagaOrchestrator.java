@@ -7,10 +7,14 @@ import com.example.sagawallet.enums.SagaStepStatus;
 import com.example.sagawallet.repository.SagaInstanceRepository;
 import com.example.sagawallet.repository.SagaStepRepository;
 import com.example.sagawallet.exception.SagaInstanceNotFoundException;
+import com.example.sagawallet.exception.WalletNotFoundException;
+import com.example.sagawallet.exception.InsufficientFundsException;
 import com.example.sagawallet.saga.steps.SagaStepFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +24,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class SagaOrchestrator implements ISagaOrchestrator {
+
+    private static final int MAX_ATTEMPTS = 3;
+    private static final long INITIAL_INTERVAL_MS = 100;
+    private static final double BACKOFF_MULTIPLIER = 2.0;
 
     private final SagaInstanceRepository sagaInstanceRepository;
     private final SagaStepFactory sagaStepFactory;
@@ -71,24 +79,56 @@ public class SagaOrchestrator implements ISagaOrchestrator {
         }
 
         SagaContext sagaContext = objectMapper.readValue(sagaInstance.getContext(), SagaContext.class);
-        sagaStep.setStatus(SagaStepStatus.RUNNING);
-        sagaStepRepository.save(sagaStep);
-        Boolean isStepExecutedSuccessfully = iSagaStep.execute(sagaContext);
-        if(isStepExecutedSuccessfully) {
-            sagaStep.setStatus(SagaStepStatus.COMPLETED);
-            sagaStepRepository.save(sagaStep);
 
-            sagaInstance.setCurrentStep(stepName);
-            sagaInstance.setStatus(SagaStatus.RUNNING);
-            sagaInstanceRepository.save(sagaInstance);
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            sagaStep.setStatus(SagaStepStatus.RUNNING);
+            sagaStep = sagaStepRepository.save(sagaStep);
 
-            log.info("Step: {} executed successfully for saga instance: {}", stepName, sagaId);
-            return true;
+            try {
+                Boolean isStepExecutedSuccessfully = iSagaStep.execute(sagaContext);
+                if (isStepExecutedSuccessfully) {
+                    sagaStep.setStatus(SagaStepStatus.COMPLETED);
+                    sagaStepRepository.save(sagaStep);
+
+                    sagaInstance.setCurrentStep(stepName);
+                    sagaInstance.setStatus(SagaStatus.RUNNING);
+                    sagaInstanceRepository.save(sagaInstance);
+
+                    log.info("Step: {} executed successfully for saga instance: {}", stepName, sagaId);
+                    return true;
+                } else {
+                    sagaStep.setStatus(SagaStepStatus.FAILED);
+                    sagaStepRepository.save(sagaStep);
+                    log.error("Step: {} execution failed (returned false) for saga instance: {}", stepName, sagaId);
+                    return false;
+                }
+            } catch (InsufficientFundsException | WalletNotFoundException e) {
+                // Terminal business errors mean the transaction is logically impossible; skip retries and trigger compensation
+                log.error("Business error in step: {} for saga instance: {}. Error: {}", stepName, sagaId, e.getMessage());
+                sagaStep.setStatus(SagaStepStatus.FAILED);
+                sagaStep.setErrorMessage(e.getMessage());
+                sagaStepRepository.save(sagaStep);
+                return false;
+            } catch (PessimisticLockingFailureException e) {
+                // Intercepting transient shard locking timeouts here protects the master transaction context from being marked rollback-only
+                log.warn("Database concurrency failure in step: {} for saga instance: {}. Attempt {} of {}. Error: {}", 
+                         stepName, sagaId, attempt, MAX_ATTEMPTS, e.getMessage());
+
+                if (attempt >= MAX_ATTEMPTS) {
+                    log.error("Terminal database concurrency failure in step: {} for saga instance: {} after {} attempts.", 
+                              stepName, sagaId, MAX_ATTEMPTS);
+                    sagaStep.setStatus(SagaStepStatus.FAILED);
+                    sagaStep.setErrorMessage("Exhausted retries: " + e.getMessage());
+                    sagaStepRepository.save(sagaStep);
+                    return false;
+                }
+
+                // Pause the executing worker thread to allow shard lock contentions to clear naturally before retrying
+                long delay = (long) (INITIAL_INTERVAL_MS * Math.pow(BACKOFF_MULTIPLIER, attempt - 1));
+                log.info("Sleeping for {} ms before retry attempt {} for step: {}", delay, attempt + 1, stepName);
+                Thread.sleep(delay);
+            }
         }
-
-        sagaStep.setStatus(SagaStepStatus.FAILED);
-        sagaStepRepository.save(sagaStep);
-        log.error("Step: {} execution failed for saga instance: {}", stepName, sagaId);
         return false;
     }
 
@@ -106,26 +146,51 @@ public class SagaOrchestrator implements ISagaOrchestrator {
         SagaStep sagaStep = sagaStepRepository.findBySagaInstanceIdAndStepNameAndStatus(sagaId, stepName, SagaStepStatus.COMPLETED)
                 .orElse(null);
 
-        if (sagaStep.getId() == null) {
+        if (sagaStep == null) {
             log.warn("Step not found with name: {} for saga instance: {}. It might be a new step or the step execution might have failed in the previous attempt. Skipping compensation for this step.", stepName, sagaId);
             return true;
         }
 
         SagaContext sagaContext = objectMapper.readValue(sagaInstance.getContext(), SagaContext.class);
-        sagaStep.setStatus(SagaStepStatus.COMPENSATING);
-        sagaStepRepository.save(sagaStep);
-        Boolean isStepExecutedSuccessfully = iSagaStep.compensate(sagaContext);
-        if(isStepExecutedSuccessfully) {
-            sagaStep.setStatus(SagaStepStatus.COMPENSATED);
-            sagaStepRepository.save(sagaStep);
 
-            log.info("Step: {} compensated successfully for saga instance: {}", stepName, sagaId);
-            return true;
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+            sagaStep.setStatus(SagaStepStatus.COMPENSATING);
+            sagaStep = sagaStepRepository.save(sagaStep);
+
+            try {
+                Boolean isStepExecutedSuccessfully = iSagaStep.compensate(sagaContext);
+                if (isStepExecutedSuccessfully) {
+                    sagaStep.setStatus(SagaStepStatus.COMPENSATED);
+                    sagaStepRepository.save(sagaStep);
+
+                    log.info("Step: {} compensated successfully for saga instance: {}", stepName, sagaId);
+                    return true;
+                } else {
+                    sagaStep.setStatus(SagaStepStatus.FAILED);
+                    sagaStepRepository.save(sagaStep);
+                    log.error("Step: {} compensation failed (returned false) for saga instance: {}", stepName, sagaId);
+                    return false;
+                }
+            } catch (PessimisticLockingFailureException e) {
+                // Intercepting transient shard locking timeouts here protects the master transaction context from being marked rollback-only
+                log.warn("CRITICAL WARNING: Compensation step {} failed due to database concurrency conflict for saga instance {}. Attempt {} of {}. Error: {}", 
+                         stepName, sagaId, attempt, MAX_ATTEMPTS, e.getMessage());
+
+                if (attempt >= MAX_ATTEMPTS) {
+                    log.error("CRITICAL: Saga compensation failed completely after retries. Manual intervention required for Saga ID: {}. Error: {}", 
+                              sagaId, e.getMessage());
+                    sagaStep.setStatus(SagaStepStatus.FAILED);
+                    sagaStep.setErrorMessage("CRITICAL: Compensation failed: " + e.getMessage());
+                    sagaStepRepository.save(sagaStep);
+                    return false;
+                }
+
+                // Pause the executing worker thread to allow shard lock contentions to clear naturally before retrying
+                long delay = (long) (INITIAL_INTERVAL_MS * Math.pow(BACKOFF_MULTIPLIER, attempt - 1));
+                log.info("Sleeping for {} ms before retry attempt {} for compensation step: {}", delay, attempt + 1, stepName);
+                Thread.sleep(delay);
+            }
         }
-
-        sagaStep.setStatus(SagaStepStatus.FAILED);
-        sagaStepRepository.save(sagaStep);
-        log.error("Step: {} execution failed for saga instance: {}", stepName, sagaId);
         return false;
     }
 
@@ -192,7 +257,6 @@ public class SagaOrchestrator implements ISagaOrchestrator {
 
 
 // Future improvements:
-// 1. Add retry mechanism for failed steps with exponential backoff strategy.
-// 2. Add support for parallel steps in the saga.
-// 3. Add monitoring and alerting for failed saga instances and steps.
-// 4. Instead of manually setting the status of saga steps and saga instance, we can introduce methods within entities
+// 1. Add support for parallel steps in the saga.
+// 2. Add monitoring and alerting for failed saga instances and steps.
+// 3. Instead of manually setting the status of saga steps and saga instance, we can introduce methods within entities
