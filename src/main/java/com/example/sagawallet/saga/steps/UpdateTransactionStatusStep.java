@@ -9,6 +9,7 @@ import com.example.sagawallet.saga.SagaContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -18,7 +19,7 @@ public class UpdateTransactionStatusStep implements ISagaStep {
     private final TransactionRepository transactionRepository;
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Boolean execute(SagaContext context) throws Exception {
         Long transactionId = context.getLong("transactionId");
 
@@ -37,7 +38,7 @@ public class UpdateTransactionStatusStep implements ISagaStep {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Boolean compensate(SagaContext context) throws Exception {
         Long transactionId = context.getLong("transactionId");
 

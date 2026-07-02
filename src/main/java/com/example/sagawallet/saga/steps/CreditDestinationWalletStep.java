@@ -8,6 +8,7 @@ import com.example.sagawallet.saga.SagaContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -20,7 +21,7 @@ public class CreditDestinationWalletStep implements ISagaStep {
     private final WalletRepository walletRepository;
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Boolean execute(SagaContext context) throws Exception {
         // step 1: get destination wallet id from context
         Long destinationWalletId = context.getLong("destinationWalletId");
@@ -51,7 +52,7 @@ public class CreditDestinationWalletStep implements ISagaStep {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Boolean compensate(SagaContext context) {
         // step 1: get destination wallet id from context
         Long destinationWalletId = context.getLong("destinationWalletId");
