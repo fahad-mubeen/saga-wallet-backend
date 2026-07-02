@@ -5,6 +5,7 @@ import com.example.sagawallet.entity.Transaction;
 import com.example.sagawallet.enums.TransactionStatus;
 import com.example.sagawallet.mapper.TransactionMapper;
 import com.example.sagawallet.repository.TransactionRepository;
+import com.example.sagawallet.exception.TransactionNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -43,7 +44,7 @@ public class TransactionService {
 
     public Transaction getTransactionById(Long id) {
         return transactionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+                .orElseThrow(() -> new TransactionNotFoundException("Transaction not found with ID: " + id));
     }
 
     public List<Transaction> getTransactionsByWalletId(Long walletId) {

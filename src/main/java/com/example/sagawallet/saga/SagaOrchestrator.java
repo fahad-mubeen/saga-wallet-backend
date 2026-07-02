@@ -6,6 +6,7 @@ import com.example.sagawallet.enums.SagaStatus;
 import com.example.sagawallet.enums.SagaStepStatus;
 import com.example.sagawallet.repository.SagaInstanceRepository;
 import com.example.sagawallet.repository.SagaStepRepository;
+import com.example.sagawallet.exception.SagaInstanceNotFoundException;
 import com.example.sagawallet.saga.steps.SagaStepFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ public class SagaOrchestrator implements ISagaOrchestrator {
             return savedSagaInstance.getId();
         } catch (Exception e) {
             log.error("Error while creating saga instance", e);
-            throw new RuntimeException("Error while creating saga instance", e);
+            throw new IllegalArgumentException("Error while creating saga instance", e);
         }
     }
 
@@ -48,10 +49,10 @@ public class SagaOrchestrator implements ISagaOrchestrator {
     @Transactional
     public Boolean executeStep(Long sagaId, String stepName) throws Exception {
         SagaInstance sagaInstance = sagaInstanceRepository.findById(sagaId)
-                .orElseThrow(() -> new RuntimeException("Saga instance not found with id: " + sagaId));
+                .orElseThrow(() -> new SagaInstanceNotFoundException("Saga instance not found with id: " + sagaId));
 
         ISagaStep iSagaStep = sagaStepFactory.getSagaStep(stepName)
-                .orElseThrow(() -> new RuntimeException("Saga step not found with name: " + stepName));
+                .orElseThrow(() -> new IllegalArgumentException("Saga step not found with name: " + stepName));
 
         log.info("Executing step: {} for saga instance: {}", stepName, sagaId);
 
@@ -95,10 +96,10 @@ public class SagaOrchestrator implements ISagaOrchestrator {
     @Transactional
     public Boolean compensateStep(Long sagaId, String stepName) throws Exception {
         SagaInstance sagaInstance = sagaInstanceRepository.findById(sagaId)
-                .orElseThrow(() -> new RuntimeException("Saga instance not found with id: " + sagaId));
+                .orElseThrow(() -> new SagaInstanceNotFoundException("Saga instance not found with id: " + sagaId));
 
         ISagaStep iSagaStep = sagaStepFactory.getSagaStep(stepName)
-                .orElseThrow(() -> new RuntimeException("Saga step not found with name: " + stepName));
+                .orElseThrow(() -> new IllegalArgumentException("Saga step not found with name: " + stepName));
 
         log.info("Executing step: {} for saga instance: {}", stepName, sagaId);
 
@@ -132,14 +133,14 @@ public class SagaOrchestrator implements ISagaOrchestrator {
     @Transactional
     public SagaInstance getSagaInstance(Long sagaInstanceId) {
         return sagaInstanceRepository.findById(sagaInstanceId)
-                .orElseThrow(() -> new RuntimeException("Saga instance not found with id: " + sagaInstanceId));
+                .orElseThrow(() -> new SagaInstanceNotFoundException("Saga instance not found with id: " + sagaInstanceId));
     }
 
     @Override
     @Transactional
     public void completeSaga(Long sagaInstanceId) {
         SagaInstance sagaInstance = sagaInstanceRepository.findById(sagaInstanceId)
-                .orElseThrow(() -> new RuntimeException("Saga instance not found with id: " + sagaInstanceId));
+                .orElseThrow(() -> new SagaInstanceNotFoundException("Saga instance not found with id: " + sagaInstanceId));
         sagaInstance.setStatus(SagaStatus.COMPLETED);
         sagaInstanceRepository.save(sagaInstance);
     }
@@ -148,7 +149,7 @@ public class SagaOrchestrator implements ISagaOrchestrator {
     @Transactional
     public void compensateSaga(Long sagaInstanceId) throws Exception {
         SagaInstance sagaInstance = sagaInstanceRepository.findById(sagaInstanceId)
-                .orElseThrow(() -> new RuntimeException("Saga instance not found with id: " + sagaInstanceId));
+                .orElseThrow(() -> new SagaInstanceNotFoundException("Saga instance not found with id: " + sagaInstanceId));
 
         sagaInstance.setStatus(SagaStatus.COMPENSATING);
         sagaInstanceRepository.save(sagaInstance);
@@ -176,7 +177,7 @@ public class SagaOrchestrator implements ISagaOrchestrator {
     @Transactional
     public void failSaga(Long sagaInstanceId) {
         SagaInstance sagaInstance = sagaInstanceRepository.findById(sagaInstanceId)
-                .orElseThrow(() -> new RuntimeException("Saga instance not found with id: " + sagaInstanceId));
+                .orElseThrow(() -> new SagaInstanceNotFoundException("Saga instance not found with id: " + sagaInstanceId));
         sagaInstance.setStatus(SagaStatus.FAILED);
         sagaInstanceRepository.save(sagaInstance);
 
@@ -195,4 +196,3 @@ public class SagaOrchestrator implements ISagaOrchestrator {
 // 2. Add support for parallel steps in the saga.
 // 3. Add monitoring and alerting for failed saga instances and steps.
 // 4. Instead of manually setting the status of saga steps and saga instance, we can introduce methods within entities
-// 5. ControllerAdvice to handle exceptions globally and return appropriate responses.

@@ -1,6 +1,7 @@
 package com.example.sagawallet.saga.steps;
 
 import com.example.sagawallet.entity.Wallet;
+import com.example.sagawallet.exception.WalletNotFoundException;
 import com.example.sagawallet.repository.WalletRepository;
 import com.example.sagawallet.saga.ISagaStep;
 import com.example.sagawallet.saga.SagaContext;
@@ -26,7 +27,7 @@ public class DebitSourceWalletStep implements ISagaStep {
         log.info("Debiting source wallet {} with amount {}", sourceWalletId, amount);
 
         Wallet sourceWallet = walletRepository.findByIdWithLock(sourceWalletId)
-                .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+                .orElseThrow(() -> new WalletNotFoundException("Source wallet not found"));
 
         log.info("Source wallet found: {} and balance is {}", sourceWallet.getId(), sourceWallet.getBalance());
         context.put("sourceBalanceBeforeDebit", sourceWallet.getBalance());
@@ -48,7 +49,7 @@ public class DebitSourceWalletStep implements ISagaStep {
         log.info("Compensating debit of source wallet {} with amount {}", sourceWalletId, amount);
 
         Wallet sourceWallet = walletRepository.findByIdWithLock(sourceWalletId)
-                .orElseThrow(() -> new RuntimeException("Source wallet not found"));
+                .orElseThrow(() -> new WalletNotFoundException("Source wallet not found"));
         context.put("sourceBalanceBeforeDebitCompensation", sourceWallet.getBalance());
         log.info("Source wallet found: {} and balance is {}", sourceWallet.getId(), sourceWallet.getBalance());
 

@@ -1,6 +1,7 @@
 package com.example.sagawallet.saga.steps;
 
 import com.example.sagawallet.entity.Wallet;
+import com.example.sagawallet.exception.WalletNotFoundException;
 import com.example.sagawallet.repository.WalletRepository;
 import com.example.sagawallet.saga.ISagaStep;
 import com.example.sagawallet.saga.SagaContext;
@@ -29,7 +30,7 @@ public class CreditDestinationWalletStep implements ISagaStep {
 
         // step 2: fetch the destination wallet from the database with a lock
         Wallet destinationWallet = walletRepository.findByIdWithLock(destinationWalletId)
-                .orElseThrow(() -> new RuntimeException("Destination wallet not found"));
+                .orElseThrow(() -> new WalletNotFoundException("Destination wallet not found"));
 
         log.info("Destination wallet found: {} and balance is {}", destinationWallet.getId(), destinationWallet.getBalance());
 
@@ -60,7 +61,7 @@ public class CreditDestinationWalletStep implements ISagaStep {
 
         // step 2: fetch the destination wallet from the database with a lock
         Wallet destinationWallet = walletRepository.findByIdWithLock(destinationWalletId)
-                .orElseThrow(() -> new RuntimeException("Destination wallet not found"));
+                .orElseThrow(() -> new WalletNotFoundException("Destination wallet not found"));
 
         log.info("Destination wallet found: {} and balance is {}", destinationWallet.getId(), destinationWallet.getBalance());
 

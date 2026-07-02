@@ -1,6 +1,7 @@
 package com.example.sagawallet.service;
 
 import com.example.sagawallet.entity.Wallet;
+import com.example.sagawallet.exception.WalletNotFoundException;
 import com.example.sagawallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,7 @@ public class WalletService {
 
     public Wallet getWalletById(Long id) {
         return walletRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new WalletNotFoundException("Wallet not found with ID: " + id));
     }
 
     public List<Wallet> getWalletsByUserId(Long userId) {

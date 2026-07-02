@@ -1,5 +1,6 @@
 package com.example.sagawallet.entity;
 
+import com.example.sagawallet.exception.InsufficientFundsException;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,7 +35,7 @@ public class Wallet {
 
     public void debit(BigDecimal amount) {
         if (!hasSufficientBalance(amount)) {
-            throw new IllegalArgumentException("Insufficient balance");
+            throw new InsufficientFundsException("Insufficient balance");
         }
         balance = balance.subtract(amount);
     }

@@ -2,6 +2,7 @@ package com.example.sagawallet.service;
 
 import com.example.sagawallet.dto.UserDto;
 import com.example.sagawallet.entity.User;
+import com.example.sagawallet.exception.UserNotFoundException;
 import com.example.sagawallet.mapper.UserMapper;
 import com.example.sagawallet.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,13 +21,13 @@ public class UserService {
 
     public UserDto getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id));
         return UserMapper.toDto(user);
     }
 
     public UserDto getUserByUsername(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with username: " + username));
         return UserMapper.toDto(user);
     }
 }

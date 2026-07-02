@@ -2,6 +2,7 @@ package com.example.sagawallet.saga.steps;
 
 import com.example.sagawallet.entity.Transaction;
 import com.example.sagawallet.enums.TransactionStatus;
+import com.example.sagawallet.exception.TransactionNotFoundException;
 import com.example.sagawallet.repository.TransactionRepository;
 import com.example.sagawallet.saga.ISagaStep;
 import com.example.sagawallet.saga.SagaContext;
@@ -24,7 +25,7 @@ public class UpdateTransactionStatusStep implements ISagaStep {
         log.info("Updating transaction status for transaction id {}", transactionId);
 
         Transaction transaction = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+                .orElseThrow(() -> new TransactionNotFoundException("Transaction not found with ID: " + transactionId));
 
         context.put("originalTransactionStatus", transaction.getStatus());
 
@@ -45,7 +46,7 @@ public class UpdateTransactionStatusStep implements ISagaStep {
         log.info("Compensating transaction status update for transaction id {}", transactionId);
 
         Transaction transaction = transactionRepository.findById(transactionId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+                .orElseThrow(() -> new TransactionNotFoundException("Transaction not found with ID: " + transactionId));
 
         transaction.setStatus(originalStatus);
         transactionRepository.save(transaction);
