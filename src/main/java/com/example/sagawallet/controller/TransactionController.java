@@ -29,6 +29,8 @@ public class TransactionController {
           requestDTO.getDescription()
         );
 
+        transferSagaService.executeTransferSaga(sagaInstanceID);
+
         TransferResponseDTO responseDTO = TransferResponseDTO.builder()
                 .sagaInstanceId(sagaInstanceID)
                 .build();
